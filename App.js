@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text} from 'react-native';
+import {Platform, SafeAreaView, View, Text} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 
 import { BleManager, Device } from 'react-native-ble-plx';
@@ -43,15 +43,22 @@ export default class App extends React.Component<{}, State> {
   }
 
   UNSAFE_componentWillMount() {
-    requestLocationPermission().then((granted) => {
-      if(!granted) return;
+    const run = () => {
       const subscription = this.manager.onStateChange((state) => {
         if (state === 'PoweredOn') {
           this.scan();
           subscription.remove();
         }
       }, true);
-    });
+    };
+
+    if(Platform.OS === 'android') {
+      requestLocationPermission().then((granted) => {
+        if(granted) run();
+      });
+    } else {
+      run();
+    }
   }
 
   componentWillUnmount() {
@@ -89,31 +96,31 @@ export default class App extends React.Component<{}, State> {
         beacons[d.id] = d;
       }
     } else {
-      devices[device.id] = {
+      const d = {
         name: device.name,
         id: device.id,
         rssi: device.rssi,
         txPower: device.txPowerLevel ?? 1,
       };
+      const isValidBeacon = d.name !== null && d.id !== null && d.rssi !== null && d.txPower !== null;
+      (isValidBeacon ? beacons : devices)[d.id] = d;
     }
 
     this.setState({lastDevice: device});
   }
 
   render() {
-    const {lastDevice: device} = this.state;
-
     return (
-      <View style={styles.container}>
-        {!!device && Object.values(beacons).map((beacon: Beacon) => (
-          <View style={styles.row}>
+      <SafeAreaView style={styles.container}>
+        {Object.values(beacons).map((beacon: Beacon) => (
+          <View style={styles.row} key={beacon.id}>
             <Text style={styles.text}>{`Name: ${beacon.name}`}</Text>
             <Text style={styles.text}>{`ID: ${beacon.id}`}</Text>
             <Text style={styles.text}>{`RSSI: ${beacon.rssi}`}</Text>
             <Text style={styles.text}>{`TX Power: ${beacon.txPower}`}</Text>
           </View>
         ))}
-      </View>
+      </SafeAreaView>
     );
   }
 }

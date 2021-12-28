@@ -41,6 +41,8 @@ buck-out/
 \.buckd/
 *.keystore
 !debug.keystore
+android/keystore.properties
+android/app/release/*
 
 # fastlane
 #
@@ -58,7 +60,3 @@ buck-out/
 
 # CocoaPods
 /ios/Pods/
-
-# Project exclude paths
-/android/
-/ios/
